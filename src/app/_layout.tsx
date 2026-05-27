@@ -11,16 +11,16 @@ export default function RootLayout() {
   return (
     <Stack
       screenOptions={{
-        animation: 'slide_from_right',
         headerShown: false,
+        animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="client/*" />
-      <Stack.Screen name="project/*" />
-      <Stack.Screen name="payment/*" />
-      <Stack.Screen name="worker/*" />
-      <Stack.Screen name="engineer/*" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="client" />
+      <Stack.Screen name="worker" />
+      <Stack.Screen name="engineer" />
+      <Stack.Screen name="project" />
+      <Stack.Screen name="payment" />
     </Stack>
   );
 }

@@ -4,146 +4,141 @@ import { useEffect, useState } from 'react';
 import { Client } from '@/types';
 import { getAllClients } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+const fmtDt = (ts: number) =>
+  new Date(ts * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+function initials(name: string) {
+  const parts = name.trim().split(' ');
+  return parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+}
+
+function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <View className="flex-row items-start gap-3 py-3.5 border-b border-border last:border-0">
+      <View className="w-8 h-8 rounded-xl bg-[#2E1A6E] items-center justify-center mt-0.5">
+        <Ionicons name={icon as any} size={15} color="#7C5CFC" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-muted-foreground text-[10px] uppercase tracking-widest mb-0.5">{label}</Text>
+        <Text className="text-foreground text-sm font-medium">{value}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function ClientDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [client, setClient] = useState<Client | null>(null);
 
   useEffect(() => {
-    loadClient();
+    getAllClients()
+      .then(clients => setClient(clients.find((c: Client) => c.id === id) || null))
+      .catch(() => Alert.alert('Error', 'Failed to load client details'));
   }, [id]);
-
-  const loadClient = async () => {
-    try {
-      const clients = await getAllClients();
-      const found = clients.find((c: Client) => c.id === id);
-      setClient(found || null);
-    } catch (error) {
-      console.error('Error loading client:', error);
-      Alert.alert('Error', 'Failed to load client details');
-    }
-  };
 
   if (!client) {
     return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <Text className="text-muted-foreground">Loading...</Text>
+      <View className="flex-1 justify-center items-center bg-background gap-3">
+        <View className="w-12 h-12 rounded-2xl bg-card border border-border items-center justify-center">
+          <Ionicons name="hourglass-outline" size={24} color="#5C5A72" />
+        </View>
+        <Text className="text-muted-foreground text-sm">Loading…</Text>
       </View>
     );
   }
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
   return (
-    <>
-      {/* Custom Header with Back Button and Client Name */}
-      <View className="bg-primary px-4 pt-2 pb-4">
-        <View className="flex-row items-center">
-          <TouchableOpacity 
-            onPress={() => router.back()} 
-            className="mr-4 p-2"
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text className="text-primary-foreground text-xl font-bold flex-1">
-            {client.full_name}
-          </Text>
+    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+
+      {/* ── Header ── */}
+      <View className="px-5 pt-14 pb-6">
+        <TouchableOpacity
+          className="flex-row items-center gap-1.5 mb-4"
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={18} color="#7C5CFC" />
+          <Text className="text-primary text-sm font-semibold">Back</Text>
+        </TouchableOpacity>
+
+        {/* Avatar + name */}
+        <View className="flex-row items-center gap-4">
+          <View className="w-16 h-16 rounded-2xl border-2 border-[#7C5CFC] bg-[#2E1A6E] items-center justify-center">
+            <Text className="text-2xl font-black text-[#7C5CFC]">{initials(client.full_name)}</Text>
+          </View>
+          <View className="flex-1">
+            <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
+              Client
+            </Text>
+            <Text className="text-foreground text-2xl font-black tracking-tight">{client.full_name}</Text>
+          </View>
         </View>
       </View>
 
-      <ScrollView className="flex-1 bg-background">
-        {/* Header Card with Avatar */}
-        <View className="bg-primary px-6 pb-8">
-          <View className="items-center">
-            <View className="w-24 h-24 bg-card rounded-full items-center justify-center mb-3">
-              <Text className="text-4xl font-bold text-primary">
-                {client.full_name.charAt(0).toUpperCase()}
+      <View className="px-5 pb-10">
+
+        {/* ── Contact Info ── */}
+        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+          <View style={{ height: 3, backgroundColor: '#7C5CFC' }} />
+          <View className="px-4 pt-4 pb-1">
+            <Text className="text-[#7C5CFC] text-[10px] font-bold tracking-widest uppercase mb-2">
+              Contact Information
+            </Text>
+            <InfoRow icon="call-outline"     label="Phone"   value={client.phone_number} />
+            {client.email   && <InfoRow icon="mail-outline"     label="Email"   value={client.email}   />}
+            {client.address && <InfoRow icon="location-outline" label="Address" value={client.address} />}
+          </View>
+        </View>
+
+        {/* ── Notes ── */}
+        {client.notes && (
+          <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+            <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
+            <View className="p-5">
+              <Text className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase mb-3">
+                Notes
               </Text>
+              <Text className="text-muted-foreground text-sm leading-relaxed">{client.notes}</Text>
             </View>
-            <View className="flex-row items-center mt-2">
-              <Ionicons name="call-outline" size={16} color="#fff" />
-              <Text className="text-primary-foreground text-base ml-2">{client.phone_number}</Text>
-            </View>
+          </View>
+        )}
+
+        {/* ── Meta ── */}
+        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
+          <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
+          <View className="px-4 pt-4 pb-1">
+            <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-2">
+              Record
+            </Text>
+            <InfoRow icon="calendar-outline" label="Added On" value={fmtDt(client.created_at)} />
           </View>
         </View>
 
-        {/* Contact Details */}
-        <View className="bg-card rounded-t-3xl -mt-4 p-5">
-          <Text className="text-lg font-bold text-foreground mb-4">Contact Information</Text>
-          
-          {client.email && (
-            <View className="flex-row items-start mb-4">
-              <Ionicons name="mail-outline" size={20} color="hsl(var(--primary))" />
-              <View className="ml-3 flex-1">
-                <Text className="text-xs text-muted-foreground">Email</Text>
-                <Text className="text-base text-foreground">{client.email}</Text>
-              </View>
-            </View>
-          )}
-
-          <View className="flex-row items-start mb-4">
-            <Ionicons name="call-outline" size={20} color="hsl(var(--primary))" />
-            <View className="ml-3 flex-1">
-              <Text className="text-xs text-muted-foreground">Phone Number</Text>
-              <Text className="text-base text-foreground">{client.phone_number}</Text>
-            </View>
-          </View>
-
-          {client.address && (
-            <View className="flex-row items-start mb-4">
-              <Ionicons name="location-outline" size={20} color="hsl(var(--primary))" />
-              <View className="ml-3 flex-1">
-                <Text className="text-xs text-muted-foreground">Address</Text>
-                <Text className="text-base text-foreground">{client.address}</Text>
-              </View>
-            </View>
-          )}
-
-          {client.notes && (
-            <View className="flex-row items-start mb-4">
-              <Ionicons name="document-text-outline" size={20} color="hsl(var(--primary))" />
-              <View className="ml-3 flex-1">
-                <Text className="text-xs text-muted-foreground">Notes</Text>
-                <Text className="text-base text-foreground">{client.notes}</Text>
-              </View>
-            </View>
-          )}
-
-          <View className="flex-row items-start pt-2 border-t border-border">
-            <Ionicons name="calendar-outline" size={20} color="hsl(var(--muted-foreground))" />
-            <View className="ml-3 flex-1">
-              <Text className="text-xs text-muted-foreground">Added on</Text>
-              <Text className="text-sm text-muted-foreground">{formatDate(client.created_at)}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View className="p-5 flex-row gap-3 pb-8">
-          <TouchableOpacity 
-            className="flex-1 bg-primary py-3 rounded-lg flex-row justify-center items-center"
+        {/* ── Actions ── */}
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+            activeOpacity={0.85}
             onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
           >
-            <Ionicons name="create-outline" size={20} color="hsl(var(--primary-foreground))" />
-            <Text className="text-primary-foreground font-semibold ml-2">Edit Client</Text>
+            <Ionicons name="create-outline" size={18} color="white" />
+            <Text className="text-white font-bold text-sm">Edit Client</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            className="flex-1 bg-destructive py-3 rounded-lg flex-row justify-center items-center"
+
+          <TouchableOpacity
+            className="flex-1 bg-card border border-[#EF4444] rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+            activeOpacity={0.85}
             onPress={() => Alert.alert('Coming Soon', 'Delete functionality will be added')}
           >
-            <Ionicons name="trash-outline" size={20} color="hsl(var(--destructive-foreground))" />
-            <Text className="text-destructive-foreground font-semibold ml-2">Delete</Text>
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Text className="font-bold text-sm text-[#EF4444]">Delete</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </>
+
+      </View>
+    </ScrollView>
   );
 }

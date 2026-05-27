@@ -5,146 +5,233 @@ import { getAllProjects, getAllPayments } from '@/database/database';
 import { Project, Payment } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 
+const fmt = (n: number) => `KSh ${n.toLocaleString()}`;
+
+// ─── Category config ──────────────────────────────────────────────────────────
+const CATEGORY_CONFIG: Record<string, { icon: string; dot: string; muted: string }> = {
+  material:  { icon: 'cube-outline',         dot: '#3B82F6', muted: '#1D3A6E' },
+  labor:     { icon: 'people-outline',        dot: '#10B981', muted: '#0C4A36' },
+  transport: { icon: 'car-outline',           dot: '#F59E0B', muted: '#6B420A' },
+  permit:    { icon: 'document-text-outline', dot: '#A855F7', muted: '#4A1A6E' },
+  equipment: { icon: 'hardware-chip-outline', dot: '#EF4444', muted: '#5C1A1A' },
+};
+const DEFAULT_CAT = { icon: 'receipt-outline', dot: '#8E8CA8', muted: '#2A2A36' };
+
+const STATUS_CONFIG = [
+  { key: 'active',    label: 'Active',    dot: '#10B981', muted: '#0C4A36', icon: 'pulse'             },
+  { key: 'proposal',  label: 'Proposals', dot: '#F59E0B', muted: '#6B420A', icon: 'document-text'     },
+  { key: 'completed', label: 'Completed', dot: '#3B82F6', muted: '#1D3A6E', icon: 'checkmark-circle'  },
+  { key: 'on_hold',   label: 'On Hold',   dot: '#EF4444', muted: '#5C1A1A', icon: 'pause-circle'      },
+];
+
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+function Section({ title, accentColor, children }: {
+  title: string; accentColor: string; children: React.ReactNode;
+}) {
+  return (
+    <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+      <View style={{ height: 3, backgroundColor: accentColor }} />
+      <View className="p-5">
+        <Text className="text-foreground text-base font-bold mb-4">{title}</Text>
+        {children}
+      </View>
+    </View>
+  );
+}
+
+// ─── Bar row ─────────────────────────────────────────────────────────────────
+function BarRow({
+  label, value, pct, dot, muted, icon, suffix,
+}: {
+  label: string; value: string; pct: number;
+  dot: string; muted: string; icon?: string; suffix?: string;
+}) {
+  return (
+    <View className="mb-4">
+      <View className="flex-row items-center justify-between mb-1.5">
+        <View className="flex-row items-center gap-2 flex-1">
+          {icon && (
+            <View className="w-6 h-6 rounded-lg items-center justify-center" style={{ backgroundColor: muted }}>
+              <Ionicons name={icon as any} size={13} color={dot} />
+            </View>
+          )}
+          <Text className="text-foreground text-sm font-medium flex-1" numberOfLines={1}>{label}</Text>
+        </View>
+        <View className="flex-row items-center gap-2">
+          <Text className="text-foreground text-sm font-bold">{value}</Text>
+          {suffix && <Text className="text-muted-foreground text-[10px]">{suffix}</Text>}
+        </View>
+      </View>
+      <View className="h-1.5 bg-border rounded-full overflow-hidden">
+        <View
+          className="h-full rounded-full"
+          style={{ width: `${Math.min(Math.max(pct, 0), 100)}%`, backgroundColor: dot }}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ReportsScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
 
-  const loadData = async () => {
-    const projectsData = await getAllProjects();
-    const paymentsData = await getAllPayments();
-    setProjects(projectsData as Project[]);
-    setPayments(paymentsData as Payment[]);
-  };
-
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      Promise.all([getAllProjects(), getAllPayments()]).then(([p, pay]) => {
+        setProjects(p as Project[]);
+        setPayments(pay as Payment[]);
+      });
     }, [])
   );
 
-  const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
-  const totalSpent = payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalBudget    = projects.reduce((s, p) => s + p.budget, 0);
+  const totalSpent     = payments.reduce((s, p) => s + p.amount, 0);
   const totalRemaining = totalBudget - totalSpent;
-  const percentageSpent = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+  const pctSpent       = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+  const overBudget     = totalRemaining < 0;
 
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const proposalProjects = projects.filter(p => p.status === 'proposal').length;
+  const categoryTotals: Record<string, number> = {};
+  payments.forEach(p => {
+    categoryTotals[p.category] = (categoryTotals[p.category] || 0) + p.amount;
+  });
 
-  const formatCurrency = (amount: number) => {
-    return `KSh ${amount.toLocaleString()}`;
-  };
+  const statusCounts = STATUS_CONFIG.map(s => ({
+    ...s,
+    count: projects.filter(p => p.status === s.key).length,
+  }));
 
-  const getPaymentByCategory = () => {
-    const categories: { [key: string]: number } = {};
-    payments.forEach(p => {
-      categories[p.category] = (categories[p.category] || 0) + p.amount;
-    });
-    return categories;
-  };
-
-  const categoryTotals = getPaymentByCategory();
+  const topProjects = [...projects]
+    .sort((a, b) => b.actual_cost - a.actual_cost)
+    .slice(0, 5);
 
   return (
-    <ScrollView className="flex-1 bg-background p-4">
-      <Text className="text-2xl font-bold text-foreground mb-4">Financial Reports</Text>
-      
-      {/* Summary Cards */}
-      <View className="flex-row gap-3 mb-4">
-        <View className="flex-1 bg-card rounded-lg p-3 shadow-sm">
-          <Text className="text-xs text-muted-foreground">Total Budget</Text>
-          <Text className="text-lg font-bold text-foreground">{formatCurrency(totalBudget)}</Text>
-        </View>
-        <View className="flex-1 bg-card rounded-lg p-3 shadow-sm">
-          <Text className="text-xs text-muted-foreground">Total Spent</Text>
-          <Text className="text-lg font-bold text-success">{formatCurrency(totalSpent)}</Text>
-        </View>
-        <View className="flex-1 bg-card rounded-lg p-3 shadow-sm">
-          <Text className="text-xs text-muted-foreground">Remaining</Text>
-          <Text className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-            {formatCurrency(Math.abs(totalRemaining))}
-          </Text>
-        </View>
+    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+
+      {/* ── Header ── */}
+      <View className="px-5 pt-14 pb-5">
+        <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
+          Analytics
+        </Text>
+        <Text className="text-foreground text-3xl font-black tracking-tight">Reports</Text>
       </View>
 
-      {/* Progress Bar */}
-      <View className="bg-card rounded-lg p-4 mb-4 shadow-sm">
-        <View className="flex-row justify-between mb-2">
-          <Text className="text-sm text-foreground">Overall Progress</Text>
-          <Text className="text-sm text-foreground">{percentageSpent.toFixed(1)}%</Text>
-        </View>
-        <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-          <View className="h-full bg-primary rounded-full" style={{ width: `${Math.min(percentageSpent, 100)}%` }} />
-        </View>
-      </View>
+      <View className="px-5">
 
-      {/* Project Stats */}
-      <View className="bg-card rounded-lg p-4 mb-4 shadow-sm">
-        <Text className="text-md font-semibold text-foreground mb-3">Project Status</Text>
-        <View className="flex-row justify-around">
-          <View className="items-center">
-            <Text className="text-2xl font-bold text-primary">{activeProjects}</Text>
-            <Text className="text-xs text-muted-foreground">Active</Text>
-          </View>
-          <View className="items-center">
-            <Text className="text-2xl font-bold text-warning">{proposalProjects}</Text>
-            <Text className="text-xs text-muted-foreground">Proposals</Text>
-          </View>
-          <View className="items-center">
-            <Text className="text-2xl font-bold text-success">{completedProjects}</Text>
-            <Text className="text-xs text-muted-foreground">Completed</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Spending by Category */}
-      <View className="bg-card rounded-lg p-4 mb-4 shadow-sm">
-        <Text className="text-md font-semibold text-foreground mb-3">Spending by Category</Text>
-        {Object.entries(categoryTotals).length > 0 ? (
-          Object.entries(categoryTotals).map(([category, amount]) => (
-            <View key={category} className="mb-3">
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-sm text-foreground capitalize">{category}</Text>
-                <Text className="text-sm text-foreground">{formatCurrency(amount)}</Text>
-              </View>
-              <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <View 
-                  className="h-full bg-primary rounded-full" 
-                  style={{ width: `${(amount / totalSpent) * 100}%` }}
-                />
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text className="text-center text-muted-foreground">No spending data yet</Text>
-        )}
-      </View>
-
-      {/* Top Projects by Spending */}
-      <View className="bg-card rounded-lg p-4 mb-4 shadow-sm">
-        <Text className="text-md font-semibold text-foreground mb-3">Projects by Spending</Text>
-        {projects
-          .sort((a, b) => b.actual_cost - a.actual_cost)
-          .slice(0, 5)
-          .map((project) => (
-            <View key={project.id} className="mb-3">
-              <View className="flex-row justify-between mb-1">
-                <Text className="text-sm text-foreground flex-1" numberOfLines={1}>
-                  {project.project_name}
-                </Text>
-                <Text className="text-sm text-foreground">{formatCurrency(project.actual_cost)}</Text>
-              </View>
-              <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <View 
-                  className="h-full bg-primary rounded-full" 
-                  style={{ width: `${(project.actual_cost / project.budget) * 100}%` }}
-                />
+        {/* ── Summary strip ── */}
+        <View className="flex-row gap-3 mb-4">
+          {[
+            { label: 'Budget',    value: fmt(totalBudget),             color: '#F1F0FA', dot: '#7C5CFC', muted: '#2E1A6E' },
+            { label: 'Spent',     value: fmt(totalSpent),              color: '#10B981', dot: '#10B981', muted: '#0C4A36' },
+            { label: 'Remaining', value: fmt(Math.abs(totalRemaining)), color: overBudget ? '#EF4444' : '#F1F0FA',
+              dot: overBudget ? '#EF4444' : '#5C5A72', muted: overBudget ? '#5C1A1A' : '#2A2A36' },
+          ].map(({ label, value, color, dot, muted }) => (
+            <View key={label} className="flex-1 bg-card rounded-2xl border border-border overflow-hidden">
+              <View style={{ height: 3, backgroundColor: dot }} />
+              <View className="p-3 items-center">
+                <Text className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1">{label}</Text>
+                <Text className="font-black text-sm text-center" style={{ color }} numberOfLines={1}>{value}</Text>
               </View>
             </View>
           ))}
-        {projects.length === 0 && (
-          <Text className="text-center text-muted-foreground">No projects yet</Text>
-        )}
+        </View>
+
+        {/* ── Overall budget progress ── */}
+        <Section title="Budget Utilisation" accentColor="#7C5CFC">
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-muted-foreground text-sm">Spent so far</Text>
+            <Text className="font-bold text-sm" style={{ color: overBudget ? '#EF4444' : '#7C5CFC' }}>
+              {pctSpent.toFixed(1)}%
+            </Text>
+          </View>
+          <View className="h-3 bg-border rounded-full overflow-hidden mb-2">
+            <View
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(pctSpent, 100)}%`,
+                backgroundColor: overBudget ? '#EF4444' : '#7C5CFC',
+              }}
+            />
+          </View>
+          <View className="flex-row justify-between">
+            <Text className="text-muted-foreground text-[10px]">{fmt(0)}</Text>
+            <Text className="text-muted-foreground text-[10px]">{fmt(totalBudget)}</Text>
+          </View>
+        </Section>
+
+        {/* ── Project status ── */}
+        <Section title="Project Status" accentColor="#3B82F6">
+          <View className="flex-row gap-2">
+            {statusCounts.map(({ key, label, dot, muted, icon, count }) => (
+              <View key={key} className="flex-1 rounded-xl border border-border overflow-hidden">
+                <View style={{ height: 2, backgroundColor: dot }} />
+                <View className="p-3 items-center">
+                  <View className="w-8 h-8 rounded-xl items-center justify-center mb-1.5" style={{ backgroundColor: muted }}>
+                    <Ionicons name={icon as any} size={15} color={dot} />
+                  </View>
+                  <Text className="text-foreground text-xl font-black">{count}</Text>
+                  <Text className="text-muted-foreground text-[10px] text-center mt-0.5">{label}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </Section>
+
+        {/* ── Spending by category ── */}
+        <Section title="Spending by Category" accentColor="#F59E0B">
+          {Object.entries(categoryTotals).length > 0 ? (
+            Object.entries(categoryTotals)
+              .sort(([, a], [, b]) => b - a)
+              .map(([category, amount]) => {
+                const cfg = CATEGORY_CONFIG[category] ?? DEFAULT_CAT;
+                return (
+                  <BarRow
+                    key={category}
+                    label={category.charAt(0).toUpperCase() + category.slice(1)}
+                    value={fmt(amount)}
+                    pct={(amount / totalSpent) * 100}
+                    dot={cfg.dot}
+                    muted={cfg.muted}
+                    icon={cfg.icon}
+                    suffix={`${((amount / totalSpent) * 100).toFixed(0)}%`}
+                  />
+                );
+              })
+          ) : (
+            <View className="items-center py-6">
+              <Ionicons name="pie-chart-outline" size={36} color="#5C5A72" />
+              <Text className="text-muted-foreground text-sm mt-2">No spending data yet</Text>
+            </View>
+          )}
+        </Section>
+
+        {/* ── Top projects by spending ── */}
+        <Section title="Top Projects by Spending" accentColor="#10B981">
+          {topProjects.length > 0 ? (
+            topProjects.map((project, i) => {
+              const pct = project.budget > 0 ? (project.actual_cost / project.budget) * 100 : 0;
+              const over = pct > 100;
+              return (
+                <BarRow
+                  key={project.id}
+                  label={`${i + 1}. ${project.project_name}`}
+                  value={fmt(project.actual_cost)}
+                  pct={pct}
+                  dot={over ? '#EF4444' : '#10B981'}
+                  muted={over ? '#5C1A1A' : '#0C4A36'}
+                  suffix={`${pct.toFixed(0)}% of budget`}
+                />
+              );
+            })
+          ) : (
+            <View className="items-center py-6">
+              <Ionicons name="bar-chart-outline" size={36} color="#5C5A72" />
+              <Text className="text-muted-foreground text-sm mt-2">No projects yet</Text>
+            </View>
+          )}
+        </Section>
+
       </View>
     </ScrollView>
   );

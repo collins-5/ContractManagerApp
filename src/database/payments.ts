@@ -77,5 +77,10 @@ export const getAllPayments = async (): Promise<Payment[]> => {
   return result as unknown as Payment[];
 };
 
+export const getPaymentById = async (id: string) => {
+  const result = await db.getFirstAsync('SELECT * FROM payments WHERE id = ?', [id]);
+  return result;
+};
+
 // Auto-initialize
 initPaymentsTable();
