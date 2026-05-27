@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { getProjectById, getProjectPayments, getClientById, updateProjectStatus } from '@/database/database';
 import { Project, Payment, Client } from '@/types';
+import { exportProjectReport } from '@/services/pdfExport';
 
 const fmt = (n: number) => `KSh ${n.toLocaleString()}`;
 const fmtDt = (ts: number | null) =>
@@ -106,6 +107,37 @@ export default function ProjectDetailsScreen() {
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!project || !client) return;
+    
+    const exportData = {
+      id: project.id,
+      project_name: project.project_name,
+      description: project.description,
+      client_name: client.full_name,
+      budget: project.budget,
+      actual_cost: project.actual_cost,
+      status: project.status,
+      priority: project.priority,
+      start_date: project.start_date,
+      expected_end_date: project.expected_end_date,
+    };
+    
+    const paymentData = payments.map(p => ({
+      item_description: p.item_description,
+      amount: p.amount,
+      category: p.category,
+      payment_date: p.payment_date,
+      payment_method: p.payment_method || 'cash',
+      notes: p.notes,
+    }));
+    
+    const success = await exportProjectReport(exportData, paymentData);
+    if (!success) {
+      Alert.alert('Error', 'Failed to generate PDF');
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-background gap-3">
@@ -143,6 +175,16 @@ export default function ProjectDetailsScreen() {
 
       {/* ── Hero ── */}
       <View className="px-5 pt-14 pb-6">
+        {/* Back button */}
+        <TouchableOpacity 
+          className="flex-row items-center gap-1.5 mb-4" 
+          onPress={() => router.back()} 
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={18} color="#8E8CA8" />
+          <Text className="text-muted-foreground text-sm font-semibold">Back</Text>
+        </TouchableOpacity>
+
         {/* Avatar + name */}
         <View className="flex-row items-center gap-4 mb-4">
           <View
@@ -268,7 +310,7 @@ export default function ProjectDetailsScreen() {
         )}
 
         {/* ── Actions ── */}
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-3 mb-3">
           <TouchableOpacity
             className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
             activeOpacity={0.85}
@@ -294,6 +336,16 @@ export default function ProjectDetailsScreen() {
             <Text className="text-muted-foreground font-bold text-sm">Change Status</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Export PDF Button */}
+        <TouchableOpacity
+          className="bg-success rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+          activeOpacity={0.85}
+          onPress={handleExportPDF}
+        >
+          <Ionicons name="download-outline" size={18} color="white" />
+          <Text className="text-white font-bold text-sm">Export as PDF</Text>
+        </TouchableOpacity>
 
       </View>
     </ScrollView>
