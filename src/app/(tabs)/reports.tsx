@@ -1,9 +1,10 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { getAllProjects, getAllPayments } from '@/database/database';
 import { Project, Payment } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import { exportBackup, importBackup, pickBackupFile } from '@/services/backupService';
 
 const fmt = (n: number) => `KSh ${n.toLocaleString()}`;
 
@@ -76,6 +77,7 @@ function BarRow({
 export default function ReportsScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -106,8 +108,63 @@ export default function ReportsScreen() {
     .sort((a, b) => b.actual_cost - a.actual_cost)
     .slice(0, 5);
 
+  const handleBackup = async () => {
+    setLoading(true);
+    const result = await exportBackup();
+    setLoading(false);
+    if (result.success) {
+      Alert.alert('Success', 'Backup created and shared!');
+    } else {
+      Alert.alert('Error', 'Failed to create backup');
+    }
+  };
+
+  const handleRestore = async () => {
+    Alert.alert(
+      'Restore Data',
+      'This will replace all your current data with the backup. This action cannot be undone. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            const fileResult = await pickBackupFile();
+            
+            if (!fileResult.success) {
+              setLoading(false);
+              if (!fileResult.cancelled) {
+                Alert.alert('Error', 'Failed to select backup file');
+              }
+              return;
+            }
+            
+            const restoreResult = await importBackup(fileResult.uri!);
+            setLoading(false);
+            
+            if (restoreResult.success) {
+              Alert.alert('Success', 'Data restored successfully! Refreshing...');
+              const [p, pay] = await Promise.all([getAllProjects(), getAllPayments()]);
+              setProjects(p as Project[]);
+              setPayments(pay as Payment[]);
+            } else {
+              Alert.alert('Error', 'Failed to restore backup. File may be corrupted.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+      {loading && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
+          <ActivityIndicator size="large" color="#2C4A6E" />
+          <Text className="text-white mt-2">Processing...</Text>
+        </View>
+      )}
 
       {/* ── Header ── */}
       <View className="px-5 pt-14 pb-5">
@@ -230,6 +287,29 @@ export default function ReportsScreen() {
               <Text className="text-muted-foreground text-sm mt-2">No projects yet</Text>
             </View>
           )}
+        </Section>
+
+        {/* ── Backup & Restore Section ── */}
+        <Section title="Data Management" accentColor="#8E8CA8">
+          <TouchableOpacity
+            className="bg-primary py-3 rounded-xl flex-row justify-center items-center gap-2 mb-3"
+            onPress={handleBackup}
+          >
+            <Ionicons name="cloud-upload-outline" size={20} color="white" />
+            <Text className="text-white font-semibold">Backup Data</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            className="bg-card border border-warning py-3 rounded-xl flex-row justify-center items-center gap-2"
+            onPress={handleRestore}
+          >
+            <Ionicons name="cloud-download-outline" size={20} color="#F59E0B" />
+            <Text className="text-warning font-semibold">Restore from Backup</Text>
+          </TouchableOpacity>
+          
+          <Text className="text-xs text-muted-foreground text-center mt-3">
+            Backup creates a JSON file with all your data. Restore replaces current data.
+          </Text>
         </Section>
 
       </View>

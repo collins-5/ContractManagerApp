@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Animated, Alert } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
 import { useState, useCallback, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { getDashboardStats, getRecentPayments } from '@/database/database';
+import { exportBackup } from '@/services/backupService';
 
 const fmt   = (n: number) => `KSh ${n.toLocaleString()}`;
 const fmtDt = (ts: number) =>
@@ -21,6 +22,7 @@ const QUICK_ACTIONS = [
   { icon: 'cash-outline',       label: 'Add Payment', href: '/payment/add',  dot: '#10B981', muted: '#0C4A36' },
   { icon: 'person-add-outline', label: 'New Client',  href: '/client/add',   dot: '#F59E0B', muted: '#6B420A' },
   { icon: 'construct-outline',  label: 'New Worker',  href: '/worker/add',   dot: '#A855F7', muted: '#4A1A6E' },
+  { icon: 'cloud-upload-outline', label: 'Backup',    href: null,            dot: '#8E8CA8', muted: '#2A2A36', isBackup: true },
 ] as const;
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -47,10 +49,42 @@ function StatCard({
 }
 
 // ─── Quick Action Button ──────────────────────────────────────────────────────
-function QuickAction({ icon, label, href, dot, muted }: typeof QUICK_ACTIONS[number]) {
+function QuickAction({ icon, label, href, dot, muted, isBackup }: any) {
   const scale = useRef(new Animated.Value(1)).current;
   const onIn  = () => Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 30 }).start();
   const onOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, speed: 30 }).start();
+  
+  const handleBackup = async () => {
+    const result = await exportBackup();
+    if (result.success) {
+      Alert.alert('Success', 'Backup created and shared!');
+    } else {
+      Alert.alert('Error', 'Failed to create backup');
+    }
+  };
+  
+  if (isBackup) {
+    return (
+      <TouchableOpacity 
+        activeOpacity={1} 
+        onPressIn={onIn} 
+        onPressOut={onOut} 
+        onPress={handleBackup}
+        style={{ width: '48%' }}
+      >
+        <Animated.View
+          className="bg-card rounded-2xl border border-border p-4 flex-row items-center gap-3"
+          style={{ transform: [{ scale }] }}
+        >
+          <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: muted }}>
+            <Ionicons name={icon as any} size={18} color={dot} />
+          </View>
+          <Text className="text-foreground text-sm font-semibold flex-1">{label}</Text>
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  }
+  
   return (
     <Link href={href as any} asChild>
       <TouchableOpacity activeOpacity={1} onPressIn={onIn} onPressOut={onOut} style={{ width: '48%' }}>
@@ -72,11 +106,9 @@ function QuickAction({ icon, label, href, dot, muted }: typeof QUICK_ACTIONS[num
 function PaymentRow({ payment }: { payment: any }) {
   return (
     <View className="bg-card rounded-2xl border border-border p-4 mb-2.5 flex-row items-center gap-3">
-      {/* Icon */}
       <View className="w-10 h-10 rounded-xl bg-[#0C4A36] items-center justify-center">
         <Ionicons name="cash" size={18} color="#10B981" />
       </View>
-      {/* Info */}
       <View className="flex-1">
         <Text className="text-foreground text-sm font-semibold" numberOfLines={1}>
           {payment.item_description}
@@ -91,7 +123,6 @@ function PaymentRow({ payment }: { payment: any }) {
           <Text className="text-muted-foreground text-[11px] capitalize">{payment.category}</Text>
         </View>
       </View>
-      {/* Amount */}
       <Text className="text-[#10B981] font-bold text-sm">{fmt(payment.amount)}</Text>
     </View>
   );
@@ -179,7 +210,6 @@ export default function DashboardScreen() {
         <View className="p-5">
           <SectionLabel title="Financial Overview" />
 
-          {/* Budget / Spent / Remaining */}
           <View className="gap-3 mb-4">
             {[
               { label: 'Total Budget', value: fmt(stats.totalBudget),      color: '#F1F0FA' },
@@ -196,7 +226,6 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          {/* Progress bar */}
           <View className="h-2 bg-border rounded-full overflow-hidden mb-1.5">
             <View
               className="h-full rounded-full"
