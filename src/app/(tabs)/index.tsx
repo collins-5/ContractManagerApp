@@ -171,13 +171,9 @@ export default function DashboardScreen() {
   const overBudget     = remaining < 0;
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C5CFC" />}
-    >
-      {/* ── Hero Header ── */}
-      <View className="px-5 pt-14 pb-6">
+    <>
+    {/* ── Hero Header ── */}
+      <View className="px-5 pt-14 bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl pb-6">
         <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
           Overview
         </Text>
@@ -191,7 +187,12 @@ export default function DashboardScreen() {
           </View>
         </View>
       </View>
-
+    
+    <ScrollView
+      className="flex-1 bg-background pt-4"
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C5CFC" />}
+    >
       {/* ── Stat Cards 2×2 ── */}
       <View className="px-5 mb-5 gap-3">
         <View className="flex-row gap-3">
@@ -273,5 +274,6 @@ export default function DashboardScreen() {
         )}
       </View>
     </ScrollView>
+    </>
   );
 }

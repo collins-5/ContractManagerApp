@@ -158,21 +158,22 @@ export default function ReportsScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+    <>
+     {/* ── Header ── */}
+      <View className="px-5 bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl pt-14 pb-5">
+        <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
+          Analytics
+        </Text>
+        <Text className="text-foreground text-3xl font-black tracking-tight">Reports</Text>
+      </View>
+
+    <ScrollView className="flex-1 py-2 bg-background" showsVerticalScrollIndicator={false}>
       {loading && (
         <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
           <ActivityIndicator size="large" color="#2C4A6E" />
           <Text className="text-white mt-2">Processing...</Text>
         </View>
       )}
-
-      {/* ── Header ── */}
-      <View className="px-5 pt-14 pb-5">
-        <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
-          Analytics
-        </Text>
-        <Text className="text-foreground text-3xl font-black tracking-tight">Reports</Text>
-      </View>
 
       <View className="px-5">
 
@@ -314,5 +315,6 @@ export default function ReportsScreen() {
 
       </View>
     </ScrollView>
+    </>
   );
 }

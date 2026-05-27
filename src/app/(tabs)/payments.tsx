@@ -140,7 +140,7 @@ export default function PaymentsScreen() {
     <View className="flex-1 bg-background">
 
       {/* ── Header ── */}
-      <View className="flex-row justify-between items-end px-5 pt-14 pb-5">
+      <View className="flex-row bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl justify-between items-end px-5 pt-14 pb-5">
         <View>
           <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
             Ledger
@@ -159,7 +159,7 @@ export default function PaymentsScreen() {
       </View>
 
       {/* ── Summary Card ── */}
-      <View className="mx-5 mb-4 bg-card rounded-2xl border border-border overflow-hidden">
+      <View className="mx-5 mb-4 mt-3 bg-card rounded-2xl border border-border overflow-hidden">
         <View style={{ height: 3, backgroundColor: '#10B981' }} />
         <View className="flex-row divide-x divide-border">
           <View className="flex-1 p-4 items-center">

@@ -26,8 +26,8 @@ const PRIORITY_OPTIONS = [
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
   return (
     <View className="flex-row items-center mb-1.5 gap-1">
-      <Text className="text-foreground text-sm font-bold">{label}</Text>
-      {required && <Text className="text-[#EF4444] text-sm font-bold">*</Text>}
+      <Text className="text-gray-700 text-sm font-medium">{label}</Text>
+      {required && <Text className="text-red-500 text-sm font-bold">*</Text>}
     </View>
   );
 }
@@ -35,8 +35,8 @@ function FieldLabel({ label, required }: { label: string; required?: boolean }) 
 function StyledInput({ ...props }: React.ComponentProps<typeof TextInput>) {
   return (
     <TextInput
-      className="bg-background border border-border rounded-xl px-4 py-3 mb-5 text-foreground text-sm"
-      placeholderTextColor="#5C5A72"
+      className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-5 text-gray-900 text-sm"
+      placeholderTextColor="#94A3B8"
       {...props}
     />
   );
@@ -58,7 +58,7 @@ function SegmentedPicker<T extends string>({
           <TouchableOpacity
             key={opt.value}
             className={`flex-row items-center rounded-xl px-3.5 py-2.5 border gap-2 ${
-              active ? 'border-transparent' : 'bg-background border-border'
+              active ? 'border-transparent' : 'bg-gray-50 border-gray-200'
             }`}
             style={active ? { backgroundColor: opt.dot + '22', borderColor: opt.dot } : {}}
             onPress={() => onChange(opt.value)}
@@ -66,11 +66,11 @@ function SegmentedPicker<T extends string>({
           >
             <View
               className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: active ? opt.dot : '#5C5A72' }}
+              style={{ backgroundColor: active ? opt.dot : '#94A3B8' }}
             />
             <Text
-              className="text-sm font-semibold"
-              style={{ color: active ? opt.dot : '#8E8CA8' }}
+              className="text-sm font-medium"
+              style={{ color: active ? opt.dot : '#64748B' }}
             >
               {opt.label}
             </Text>
@@ -125,118 +125,122 @@ export default function AddProjectScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-
-      {/* ── Header ── */}
-      <View className="px-5 pt-14 pb-6">
+    <>
+      <View className="flex-row justify-between bg-primary/10 border-b border-primary/30 rounded-b-3xl pt-12 pb-4 px-5">
         <TouchableOpacity
-          className="flex-row items-center gap-1.5 mb-4"
+          className="flex-row items-center gap-1.5 mb-4 self-start"
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="chevron-back" size={18} color="#7C5CFC" />
+          <Ionicons name="chevron-back" size={18} color="#1E3A5F" />
           <Text className="text-primary text-sm font-semibold">Back</Text>
         </TouchableOpacity>
-        <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
-          New Entry
-        </Text>
-        <Text className="text-foreground text-3xl font-black tracking-tight">Create Project</Text>
+
+        <View>
+          <Text className="text-gray-900 text-2xl font-bold tracking-tight">
+            Create Project
+          </Text>
+        </View>
+        <View/>
       </View>
 
-      <View className="px-5 pb-12">
+      <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
+        <View className="px-5 pb-12 pt-4">
 
-        {/* ── Basic Info ── */}
-        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
-          <View style={{ height: 3, backgroundColor: '#7C5CFC' }} />
-          <View className="p-5">
-            <Text className="text-[#7C5CFC] text-[10px] font-bold tracking-widest uppercase mb-4">
-              Basic Info
-            </Text>
+          {/* ── Basic Info ── */}
+          <View className="bg-white rounded-xl shadow-sm overflow-hidden mb-4" style={{ elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+            <View style={{ height: 3, backgroundColor: '#1E3A5F' }} />
+            <View className="p-5">
+              <Text className="text-primary text-[10px] font-bold tracking-widest uppercase mb-4">
+                Basic Info
+              </Text>
 
-            <FieldLabel label="Project Name" required />
-            <StyledInput
-              placeholder="e.g. Westlands Office Block"
-              value={projectName}
-              onChangeText={setProjectName}
-            />
+              <FieldLabel label="Project Name" required />
+              <StyledInput
+                placeholder="e.g. Westlands Office Block"
+                value={projectName}
+                onChangeText={setProjectName}
+              />
 
-            <FieldLabel label="Client" required />
-            <View className="bg-background border border-border rounded-xl mb-5 overflow-hidden">
-              <Picker
-                selectedValue={clientId}
-                onValueChange={setClientId}
-                dropdownIconColor="#8E8CA8"
-                style={{ color: '#F1F0FA' }}
-              >
-                <Picker.Item label="Select a client…" value="" color="#5C5A72" />
-                {clients.map(c => (
-                  <Picker.Item key={c.id} label={c.full_name} value={c.id} color="#F1F0FA" />
-                ))}
-              </Picker>
+              <FieldLabel label="Client" required />
+              <View className="bg-gray-50 border border-gray-200 rounded-xl mb-5 overflow-hidden">
+                <Picker
+                  selectedValue={clientId}
+                  onValueChange={setClientId}
+                  dropdownIconColor="#64748B"
+                  style={{ color: '#1E293B' }}
+                >
+                  <Picker.Item label="Select a client…" value="" color="#94A3B8" />
+                  {clients.map(c => (
+                    <Picker.Item key={c.id} label={c.full_name} value={c.id} color="#1E293B" />
+                  ))}
+                </Picker>
+              </View>
+
+              <FieldLabel label="Budget (KSh)" required />
+              <StyledInput
+                placeholder="0.00"
+                keyboardType="numeric"
+                value={budget}
+                onChangeText={setBudget}
+              />
+
+              <FieldLabel label="Description" />
+              <StyledInput
+                placeholder="Brief project description…"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                value={description}
+                onChangeText={setDescription}
+                style={{ minHeight: 96 }}
+              />
             </View>
-
-            <FieldLabel label="Budget (KSh)" required />
-            <StyledInput
-              placeholder="0.00"
-              keyboardType="numeric"
-              value={budget}
-              onChangeText={setBudget}
-            />
-
-            <FieldLabel label="Description" />
-            <StyledInput
-              placeholder="Brief project description…"
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              value={description}
-              onChangeText={setDescription}
-              style={{ minHeight: 96 }}
-            />
           </View>
-        </View>
 
-        {/* ── Status ── */}
-        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
-          <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
-          <View className="p-5">
-            <Text className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase mb-4">
-              Status
-            </Text>
-            <SegmentedPicker
-              options={STATUS_OPTIONS as any}
-              value={status as any}
-              onChange={setStatus as any}
-            />
+          {/* ── Status ── */}
+          <View className="bg-white rounded-xl shadow-sm overflow-hidden mb-4" style={{ elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+            <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
+            <View className="p-5">
+              <Text className="text-warning text-[10px] font-bold tracking-widest uppercase mb-4">
+                Status
+              </Text>
+              <SegmentedPicker
+                options={STATUS_OPTIONS as any}
+                value={status as any}
+                onChange={setStatus as any}
+              />
+            </View>
           </View>
-        </View>
 
-        {/* ── Priority ── */}
-        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
-          <View style={{ height: 3, backgroundColor: '#EF4444' }} />
-          <View className="p-5">
-            <Text className="text-[#EF4444] text-[10px] font-bold tracking-widest uppercase mb-4">
-              Priority
-            </Text>
-            <SegmentedPicker
-              options={PRIORITY_OPTIONS as any}
-              value={priority as any}
-              onChange={setPriority as any}
-            />
+          {/* ── Priority ── */}
+          <View className="bg-white rounded-xl shadow-sm overflow-hidden mb-6" style={{ elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 }}>
+            <View style={{ height: 3, backgroundColor: '#EF4444' }} />
+            <View className="p-5">
+              <Text className="text-danger text-[10px] font-bold tracking-widest uppercase mb-4">
+                Priority
+              </Text>
+              <SegmentedPicker
+                options={PRIORITY_OPTIONS as any}
+                value={priority as any}
+                onChange={setPriority as any}
+              />
+            </View>
           </View>
+
+          {/* ── Submit ── */}
+          <TouchableOpacity
+            className="bg-primary rounded-xl py-4 flex-row justify-center items-center gap-2 shadow-sm"
+            activeOpacity={0.85}
+            onPress={handleSave}
+            style={{ elevation: 2, shadowColor: '#1E3A5F', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }}
+          >
+            <Ionicons name="briefcase-outline" size={18} color="white" />
+            <Text className="text-white text-base font-semibold">Create Project</Text>
+          </TouchableOpacity>
+
         </View>
-
-        {/* ── Submit ── */}
-        <TouchableOpacity
-          className="bg-primary rounded-2xl py-4 flex-row justify-center items-center gap-2"
-          activeOpacity={0.85}
-          onPress={handleSave}
-        >
-          <Ionicons name="briefcase-outline" size={18} color="white" />
-          <Text className="text-white text-base font-bold">Create Project</Text>
-        </TouchableOpacity>
-
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }

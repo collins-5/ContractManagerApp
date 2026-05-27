@@ -34,7 +34,7 @@ function InfoRow({ icon, label, value, valueColor }: {
 export default function EngineerDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [engineer, setEngineer] = useState<Engineer | null>(null);
-  const [loading,  setLoading]  = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getEngineerById(id)
@@ -64,11 +64,10 @@ export default function EngineerDetailsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-
+    <>
       {/* ── Header ── */}
-      <View className="px-5 pt-14 pb-6">
-        <TouchableOpacity className="flex-row items-center gap-1.5 mb-4" onPress={() => router.back()} activeOpacity={0.7}>
+      <View className="px-5 bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl pt-4 pb-6 flex-row items-center justify-between gap-3">
+        <TouchableOpacity className="flex-row mr-4 items-center gap-1.5 mb-4" onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={18} color="#F59E0B" />
           <Text className="text-[#F59E0B] text-sm font-semibold">Back</Text>
         </TouchableOpacity>
@@ -87,79 +86,83 @@ export default function EngineerDetailsScreen() {
         </View>
       </View>
 
-      <View className="px-5 pb-10">
+      <ScrollView className="flex-1 py-2 bg-background" showsVerticalScrollIndicator={false}>
 
-        {/* ── Contact ── */}
-        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
-          <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
-          <View className="px-4 pt-4 pb-1">
-            <Text className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase mb-2">Contact</Text>
-            <InfoRow icon="call-outline" label="Phone" value={engineer.phone_number} />
-            {engineer.email && <InfoRow icon="mail-outline" label="Email" value={engineer.email} />}
-          </View>
-        </View>
 
-        {/* ── Professional ── */}
-        {(engineer.specialty || engineer.hourly_rate) && (
+        <View className="px-5 pb-10">
+
+          {/* ── Contact ── */}
           <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
-            <View style={{ height: 3, backgroundColor: '#3B82F6' }} />
+            <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
             <View className="px-4 pt-4 pb-1">
-              <Text className="text-[#3B82F6] text-[10px] font-bold tracking-widest uppercase mb-2">Professional</Text>
-              {engineer.specialty && <InfoRow icon="briefcase-outline" label="Specialty" value={engineer.specialty} />}
-              {engineer.hourly_rate && (
-                <InfoRow
-                  icon="cash-outline"
-                  label="Hourly Rate"
-                  value={`KSh ${engineer.hourly_rate.toLocaleString()}/hour`}
-                  valueColor="#10B981"
-                />
-              )}
+              <Text className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase mb-2">Contact</Text>
+              <InfoRow icon="call-outline" label="Phone" value={engineer.phone_number} />
+              {engineer.email && <InfoRow icon="mail-outline" label="Email" value={engineer.email} />}
             </View>
           </View>
-        )}
 
-        {/* ── Notes ── */}
-        {engineer.notes && (
-          <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+          {/* ── Professional ── */}
+          {(engineer.specialty || engineer.hourly_rate) && (
+            <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+              <View style={{ height: 3, backgroundColor: '#3B82F6' }} />
+              <View className="px-4 pt-4 pb-1">
+                <Text className="text-[#3B82F6] text-[10px] font-bold tracking-widest uppercase mb-2">Professional</Text>
+                {engineer.specialty && <InfoRow icon="briefcase-outline" label="Specialty" value={engineer.specialty} />}
+                {engineer.hourly_rate && (
+                  <InfoRow
+                    icon="cash-outline"
+                    label="Hourly Rate"
+                    value={`KSh ${engineer.hourly_rate.toLocaleString()}/hour`}
+                    valueColor="#10B981"
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* ── Notes ── */}
+          {engineer.notes && (
+            <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+              <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
+              <View className="p-5">
+                <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-3">Notes</Text>
+                <Text className="text-muted-foreground text-sm leading-relaxed">{engineer.notes}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Record ── */}
+          <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
             <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
-            <View className="p-5">
-              <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-3">Notes</Text>
-              <Text className="text-muted-foreground text-sm leading-relaxed">{engineer.notes}</Text>
+            <View className="px-4 pt-4 pb-1">
+              <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-2">Record</Text>
+              <InfoRow icon="calendar-outline" label="Added On" value={fmtDt(engineer.created_at)} />
             </View>
           </View>
-        )}
 
-        {/* ── Record ── */}
-        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
-          <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
-          <View className="px-4 pt-4 pb-1">
-            <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-2">Record</Text>
-            <InfoRow icon="calendar-outline" label="Added On" value={fmtDt(engineer.created_at)} />
+          {/* ── Actions ── */}
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+              activeOpacity={0.85}
+              onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
+            >
+              <Ionicons name="create-outline" size={18} color="white" />
+              <Text className="text-white font-bold text-sm">Edit Engineer</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-1 bg-card border border-[#EF4444] rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+              activeOpacity={0.85}
+              onPress={() => Alert.alert('Coming Soon', 'Delete functionality will be added')}
+            >
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
+              <Text className="font-bold text-sm text-[#EF4444]">Delete</Text>
+            </TouchableOpacity>
           </View>
+
         </View>
-
-        {/* ── Actions ── */}
-        <View className="flex-row gap-3">
-          <TouchableOpacity
-            className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
-            activeOpacity={0.85}
-            onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
-          >
-            <Ionicons name="create-outline" size={18} color="white" />
-            <Text className="text-white font-bold text-sm">Edit Engineer</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-1 bg-card border border-[#EF4444] rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
-            activeOpacity={0.85}
-            onPress={() => Alert.alert('Coming Soon', 'Delete functionality will be added')}
-          >
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
-            <Text className="font-bold text-sm text-[#EF4444]">Delete</Text>
-          </TouchableOpacity>
-        </View>
-
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }

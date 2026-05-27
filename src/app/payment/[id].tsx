@@ -115,12 +115,10 @@ export default function PaymentDetailsScreen() {
   const cat = CATEGORY[payment.category as CatKey] ?? CATEGORY.misc;
 
   return (
-    <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-
-      {/* ── Header ── */}
-      <View className="px-5 pt-14 pb-6">
+    <>
+      <View className="px-5 bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl pt-4 pb-6 flex-row items-center justify-between gap-3">
         <TouchableOpacity 
-          className="flex-row items-center gap-1.5 mb-4" 
+          className="flex-row items-center gap-1.5 mb-4 mr-4" 
           onPress={() => router.back()} 
           activeOpacity={0.7}
         >
@@ -145,6 +143,8 @@ export default function PaymentDetailsScreen() {
           </View>
         </View>
       </View>
+
+    <ScrollView className="flex-1 py-2 bg-background" showsVerticalScrollIndicator={false}>
 
       <View className="px-5 pb-10">
 
@@ -293,5 +293,6 @@ export default function PaymentDetailsScreen() {
 
       </View>
     </ScrollView>
+    </>
   );
 }

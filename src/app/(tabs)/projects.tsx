@@ -140,7 +140,7 @@ export default function ProjectsScreen() {
     <View className="flex-1 bg-background">
 
       {/* ── Header ── */}
-      <View className="flex-row justify-between items-end px-5 pt-14 pb-5">
+      <View className="flex-row justify-between bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl items-end px-5 pt-14 pb-5">
         <View>
           <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
             Overview
@@ -163,7 +163,7 @@ export default function ProjectsScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
-        className="mb-3 flex-grow-0"
+        className="mb-3 py-2 flex-grow-0"
       >
         {FILTERS.map(({ key, label }) => {
           const active = filter === key;

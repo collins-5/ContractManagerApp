@@ -154,7 +154,7 @@ export default function ContactsScreen() {
     <View className="flex-1 bg-background">
 
       {/* ── Header ── */}
-      <View className="flex-row justify-between items-end px-5 pt-14 pb-5">
+      <View className="flex-row justify-between bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl items-end px-5 pt-14 pb-5">
         <View>
           <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
             Directory
@@ -173,7 +173,7 @@ export default function ContactsScreen() {
       </View>
 
       {/* ── Tabs ── */}
-      <View className="flex-row px-5 gap-2 mb-2">
+      <View className="flex-row px-5 gap-2 py-2 mb-2">
         {TAB_ORDER.map(({ key, icon }) => {
           const active = activeTab === key;
           return (
