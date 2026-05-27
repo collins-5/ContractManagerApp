@@ -1,10 +1,13 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Picker } from '@react-native-picker/picker';
 import uuid from 'react-native-uuid';
-import { insertPayment, getProjectById } from '@/database/database';
+import { insertPayment, getProjectById, getAllProjects } from '@/database/database';
 import { Project } from '@/types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -79,6 +82,8 @@ function ChipPicker<T extends string>({
 export default function AddPaymentScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const [project,         setProject]         = useState<Project | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
+  const [projects,        setProjects]        = useState<Project[]>([]);
   const [itemDescription, setItemDescription] = useState('');
   const [amount,          setAmount]          = useState('');
   const [category,        setCategory]        = useState<CatValue>('material');
@@ -87,35 +92,128 @@ export default function AddPaymentScreen() {
   const [notes,           setNotes]           = useState('');
   const [date,            setDate]            = useState(new Date());
   const [showDatePicker,  setShowDatePicker]  = useState(false);
+  const [receiptImage,    setReceiptImage]    = useState<string | null>(null);
 
   useEffect(() => {
-    if (projectId) getProjectById(projectId).then(p => setProject(p as Project));
-  }, [projectId]);
+    loadProjects();
+    requestPermissions();
+  }, []);
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      getProjectById(selectedProjectId).then(p => setProject(p as Project));
+    } else {
+      setProject(null);
+    }
+  }, [selectedProjectId]);
+
+  const loadProjects = async () => {
+    const allProjects = await getAllProjects();
+    setProjects(allProjects as Project[]);
+  };
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera permission is required to take receipt photos');
+    }
+  };
+
+  const copyImageToAppStorage = async (uri: string): Promise<string | null> => {
+    try {
+      const imageDir = `${FileSystem.documentDirectory}receipts/`;
+      const dirInfo = await FileSystem.getInfoAsync(imageDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
+      }
+      
+      const fileName = `receipt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const newPath = `${imageDir}${fileName}`;
+      
+      await FileSystem.copyAsync({
+        from: uri,
+        to: newPath
+      });
+      
+      return newPath;
+    } catch (error) {
+      console.error('Error copying image:', error);
+      return null;
+    }
+  };
+
+  const takePhoto = async () => {
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.7,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const savedPath = await copyImageToAppStorage(result.assets[0].uri);
+      if (savedPath) {
+        setReceiptImage(savedPath);
+      } else {
+        setReceiptImage(result.assets[0].uri);
+      }
+    }
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const savedPath = await copyImageToAppStorage(result.assets[0].uri);
+      if (savedPath) {
+        setReceiptImage(savedPath);
+      } else {
+        setReceiptImage(result.assets[0].uri);
+      }
+    }
+  };
 
   const handleSave = async () => {
-    if (!itemDescription.trim())        return Alert.alert('Error', 'Please enter item description');
-    if (!amount || parseFloat(amount) <= 0) return Alert.alert('Error', 'Please enter a valid amount');
+    if (!selectedProjectId) {
+      Alert.alert('Error', 'Please select a project');
+      return;
+    }
+    if (!itemDescription.trim()) {
+      Alert.alert('Error', 'Please enter item description');
+      return;
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
 
     try {
-      await insertPayment({
+      const paymentData = {
         id: uuid.v4() as string,
-        project_id:         projectId,
-        payment_date:       Math.floor(date.getTime() / 1000),
-        category,
-        item_description:   itemDescription,
-        quantity:           1,
-        unit_price:         parseFloat(amount),
-        amount:             parseFloat(amount),
-        payment_method:     paymentMethod,
-        reference_number:   referenceNumber || null,
-        notes:              notes || null,
-        receipt_image_path: null,
-      });
+        project_id: selectedProjectId,
+        payment_date: Math.floor(date.getTime() / 1000),
+        category: category,
+        item_description: itemDescription,
+        quantity: 1,
+        unit_price: parseFloat(amount),
+        amount: parseFloat(amount),
+        payment_method: paymentMethod,
+        reference_number: referenceNumber || null,
+        notes: notes || null,
+        receipt_image_path: receiptImage || null,
+      };
+
+      await insertPayment(paymentData);
+      
       Alert.alert('Success', 'Payment added successfully', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: () => router.back() }
       ]);
-    } catch {
-      Alert.alert('Error', 'Failed to add payment');
+    } catch (error) {
+      console.error('Error saving payment:', error);
+      Alert.alert('Error', 'Failed to add payment. Please make sure you selected a project.');
     }
   };
 
@@ -133,21 +231,38 @@ export default function AddPaymentScreen() {
 
       <View className="px-5 pb-12">
 
-        {/* ── Project banner ── */}
-        {project && (
-          <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
-            <View style={{ height: 3, backgroundColor: '#7C5CFC' }} />
-            <View className="flex-row items-center gap-3 p-4">
-              <View className="w-9 h-9 rounded-xl bg-[#2E1A6E] items-center justify-center">
-                <Ionicons name="briefcase" size={16} color="#7C5CFC" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-muted-foreground text-[10px] uppercase tracking-widest">Project</Text>
-                <Text className="text-foreground font-bold text-sm">{project.project_name}</Text>
-              </View>
+        {/* ── Project Selection ── */}
+        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+          <View style={{ height: 3, backgroundColor: '#7C5CFC' }} />
+          <View className="p-5">
+            <FieldLabel label="Select Project" required />
+            <View className="bg-background border border-border rounded-xl mb-5 overflow-hidden">
+              <Picker
+                selectedValue={selectedProjectId}
+                onValueChange={(value) => setSelectedProjectId(value)}
+                dropdownIconColor="hsl(var(--foreground))"
+              >
+                <Picker.Item label="Select a project..." value="" />
+                {projects.map((p) => (
+                  <Picker.Item key={p.id} label={p.project_name} value={p.id} />
+                ))}
+              </Picker>
             </View>
+
+            {/* Project banner when selected */}
+            {project && (
+              <View className="bg-primary/10 rounded-xl p-3 flex-row items-center gap-3">
+                <View className="w-8 h-8 rounded-lg bg-primary/20 items-center justify-center">
+                  <Ionicons name="briefcase" size={16} color="#7C5CFC" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-muted-foreground text-[10px] uppercase tracking-widest">Selected Project</Text>
+                  <Text className="text-foreground font-bold text-sm">{project.project_name}</Text>
+                </View>
+              </View>
+            )}
           </View>
-        )}
+        </View>
 
         {/* ── Details ── */}
         <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
@@ -222,6 +337,57 @@ export default function AddPaymentScreen() {
                   onChangeText={setReferenceNumber}
                 />
               </>
+            )}
+          </View>
+        </View>
+
+        {/* ── Receipt Image Section ── */}
+        <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+          <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
+          <View className="p-5">
+            <Text className="text-[#F59E0B] text-[10px] font-bold tracking-widest uppercase mb-4">Receipt / Evidence</Text>
+            
+            {receiptImage ? (
+              <View>
+                <Image 
+                  source={{ uri: receiptImage }} 
+                  className="w-full h-48 rounded-xl mb-3"
+                  resizeMode="cover"
+                />
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    className="flex-1 bg-warning py-2 rounded-xl flex-row justify-center items-center gap-2"
+                    onPress={takePhoto}
+                  >
+                    <Ionicons name="camera" size={16} color="white" />
+                    <Text className="text-white font-semibold text-sm">Retake</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="flex-1 bg-destructive py-2 rounded-xl flex-row justify-center items-center gap-2"
+                    onPress={() => setReceiptImage(null)}
+                  >
+                    <Ionicons name="trash" size={16} color="white" />
+                    <Text className="text-white font-semibold text-sm">Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  className="flex-1 bg-primary py-3 rounded-xl flex-row justify-center items-center gap-2"
+                  onPress={takePhoto}
+                >
+                  <Ionicons name="camera" size={18} color="white" />
+                  <Text className="text-white font-semibold text-sm">Take Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="flex-1 bg-secondary py-3 rounded-xl flex-row justify-center items-center gap-2"
+                  onPress={pickImage}
+                >
+                  <Ionicons name="images" size={18} color="white" />
+                  <Text className="text-white font-semibold text-sm">Gallery</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>

@@ -34,10 +34,20 @@ export const insertPayment = async (payment: Omit<Payment, 'created_at' | 'updat
       notes, receipt_image_path, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      payment.id, payment.project_id, payment.payment_date, payment.category,
-      payment.item_description, payment.quantity, payment.unit_price, payment.amount,
-      payment.payment_method, payment.reference_number, payment.notes,
-      payment.receipt_image_path, now, now
+      payment.id, 
+      payment.project_id, 
+      payment.payment_date, 
+      payment.category,
+      payment.item_description, 
+      payment.quantity ?? 1, 
+      payment.unit_price ?? null, 
+      payment.amount,
+      payment.payment_method ?? null, 
+      payment.reference_number ?? null, 
+      payment.notes ?? null,
+      payment.receipt_image_path ?? null, 
+      now, 
+      now
     ]
   );
   

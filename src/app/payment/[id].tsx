@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -217,6 +217,21 @@ export default function PaymentDetailsScreen() {
             )}
           </View>
         </View>
+
+        {/* ── Receipt Image ── */}
+        {payment.receipt_image_path && (
+          <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
+            <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
+            <View className="p-4">
+              <Text className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-2">Receipt Image</Text>
+              <Image 
+                source={{ uri: payment.receipt_image_path }} 
+                className="w-full h-48 rounded-xl"
+                resizeMode="cover"
+              />
+            </View>
+          </View>
+        )}
 
         {/* ── Project Card ── */}
         {project && (
