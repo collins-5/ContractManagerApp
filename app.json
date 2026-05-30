@@ -13,7 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.techcollins2.ContractManagerApp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to take photos of receipts for payment tracking.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photos to select receipt images.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save receipt images to your library."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +27,14 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.techcollins2.ContractManagerApp",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +42,32 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take receipt photos for payment records."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to select receipt images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take receipt photos."
+        }
+      ],
+      [
+        "expo-file-system",
+        {
+          "fileSystemPermission": "Allow $(PRODUCT_NAME) to access your files for backups and receipt storage."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "24bbdcf9-0545-47ef-b770-0943f5a06ae7"
+      }
+    }
   }
 }
