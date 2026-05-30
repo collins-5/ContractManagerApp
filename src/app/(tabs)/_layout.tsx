@@ -1,22 +1,33 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { StatusBar, View, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function TabLayout() {
+export default function PatientTabsLayout() {
+  const insets = useSafeAreaInsets();
+
+  const TAB_BAR_BASE_HEIGHT = 60;
+  const tabBarHeight = TAB_BAR_BASE_HEIGHT + insets.bottom;
+
   return (
     <>
-      <StatusBar style="light" backgroundColor="#2C4A6E" />
-        <Tabs
-          screenOptions={{
-            tabBarActiveTintColor: '#2C4A6E',
-            tabBarInactiveTintColor: '#8E8E93',
-            headerShown: false,
-            tabBarStyle: {
-              backgroundColor: '#FFFFFF',
-              borderTopColor: '#E5E5EA',
-            },
-          }}
-        >
+      <StatusBar barStyle={"light-content"} backgroundColor="#2C4A6E" />
+      <View style={{ height: insets.top, backgroundColor: 'red' }} />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: "#2a4b7c",
+          tabBarInactiveTintColor: "#6b7280",
+          tabBarStyle: {
+            backgroundColor: "#ffffff",
+            height: tabBarHeight,         
+            paddingBottom: insets.bottom, 
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: "#f3f4f6",
+          },
+        }}
+      >
           <Tabs.Screen
             name="index"
             options={{
