@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -61,7 +60,8 @@
         {
           "fileSystemPermission": "Allow $(PRODUCT_NAME) to access your files for backups and receipt storage."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "router": {},
