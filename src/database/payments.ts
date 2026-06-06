@@ -34,23 +34,23 @@ export const insertPayment = async (payment: Omit<Payment, 'created_at' | 'updat
       notes, receipt_image_path, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
-      payment.id, 
-      payment.project_id, 
-      payment.payment_date, 
+      payment.id,
+      payment.project_id,
+      payment.payment_date,
       payment.category,
-      payment.item_description, 
-      payment.quantity ?? 1, 
-      payment.unit_price ?? null, 
+      payment.item_description,
+      payment.quantity ?? 1,
+      payment.unit_price ?? null,
       payment.amount,
-      payment.payment_method ?? null, 
-      payment.reference_number ?? null, 
+      payment.payment_method ?? null,
+      payment.reference_number ?? null,
       payment.notes ?? null,
-      payment.receipt_image_path ?? null, 
-      now, 
-      now
+      payment.receipt_image_path ?? null,
+      now,
+      now,
     ]
   );
-  
+
   // Update project actual cost
   await updateProjectActualCost(payment.project_id);
 };
@@ -77,6 +77,29 @@ export const deletePayment = async (id: string, projectId: string) => {
   await updateProjectActualCost(projectId);
 };
 
+export const updatePayment = async (id: string, payment: Partial<Payment>) => {
+  const now = Math.floor(Date.now() / 1000);
+
+  const fields = Object.keys(payment).filter(k => k !== 'id' && k !== 'created_at');
+  const values = fields.map(f => {
+    const value = payment[f as keyof Payment];
+    return value ?? null;
+  });
+
+  if (fields.length === 0) return;
+
+  // If project_id changes, we must recalc both old and new projects
+  const existing = await db.getFirstAsync('SELECT project_id FROM payments WHERE id = ?', [id]);
+  const oldProjectId = (existing as any)?.project_id as string | undefined;
+  const newProjectId = (payment.project_id as string | null) ?? oldProjectId;
+
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  await db.runAsync(`UPDATE payments SET ${setClause}, updated_at = ? WHERE id = ?`, [...values, now, id]);
+
+  if (oldProjectId) await updateProjectActualCost(oldProjectId);
+  if (newProjectId) await updateProjectActualCost(newProjectId);
+};
+
 export const getAllPayments = async (): Promise<Payment[]> => {
   const result = await db.getAllAsync(`
     SELECT p.*, pr.project_name 
@@ -94,3 +117,4 @@ export const getPaymentById = async (id: string) => {
 
 // Auto-initialize
 initPaymentsTable();
+

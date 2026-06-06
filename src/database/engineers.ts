@@ -38,5 +38,24 @@ export const getEngineerById = async (id: string): Promise<Engineer | null> => {
   return result as unknown as Engineer | null;
 };
 
+export const updateEngineer = async (id: string, engineer: Partial<Engineer>) => {
+  const now = Math.floor(Date.now() / 1000);
+  const fields = Object.keys(engineer).filter(k => k !== 'id' && k !== 'created_at');
+  const values = fields.map(f => {
+    const value = engineer[f as keyof Engineer];
+    return value ?? null;
+  });
+
+  if (fields.length === 0) return;
+
+  const setClause = fields.map(f => `${f} = ?`).join(', ');
+  await db.runAsync(`UPDATE engineers SET ${setClause}, updated_at = ? WHERE id = ?`, [...values, now, id]);
+};
+
+export const deleteEngineer = async (id: string) => {
+  await db.runAsync('DELETE FROM engineers WHERE id = ?', [id]);
+};
+
 // Auto-initialize
 initEngineersTable();
+

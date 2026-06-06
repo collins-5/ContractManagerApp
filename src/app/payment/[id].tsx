@@ -75,7 +75,7 @@ export default function PaymentDetailsScreen() {
             try {
               await deletePayment(id, payment!.project_id);
               Alert.alert('Success', 'Payment deleted successfully', [
-                { text: 'OK', onPress: () => router.back() }
+                { text: 'OK', onPress: () => router.replace('/(tabs)/contacts') }
               ]);
             } catch (error) {
               Alert.alert('Error', 'Failed to delete payment');
@@ -272,14 +272,14 @@ export default function PaymentDetailsScreen() {
 
         {/* ── Actions ── */}
         <View className="flex-row gap-3">
-          <TouchableOpacity
-            className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
-            activeOpacity={0.85}
-            onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
-          >
-            <Ionicons name="create-outline" size={18} color="white" />
-            <Text className="text-white font-bold text-sm">Edit Payment</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
+              activeOpacity={0.85}
+              onPress={() => router.push(`/payment/${payment.id}/edit`)}
+            >
+              <Ionicons name="create-outline" size={18} color="white" />
+              <Text className="text-white font-bold text-sm">Edit Payment</Text>
+            </TouchableOpacity>
 
           <TouchableOpacity
             className="flex-1 bg-card border border-[#EF4444] rounded-2xl py-3.5 flex-row justify-center items-center gap-2"

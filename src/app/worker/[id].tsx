@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,9 +56,9 @@ export default function WorkerDetailsScreen() {
             try {
               await deleteWorker(id);
               Alert.alert('Success', 'Worker deleted successfully', [
-                { text: 'OK', onPress: () => router.back() }
+                { text: 'OK', onPress: () => router.replace('/(tabs)/contacts') }
               ]);
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete worker');
             }
           }
@@ -110,11 +110,8 @@ export default function WorkerDetailsScreen() {
       </View>
 
       <ScrollView className="flex-1 py-2 bg-background" showsVerticalScrollIndicator={false}>
-
-
         <View className="px-5 pb-10">
 
-          {/* ── Contact ── */}
           <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
             <View style={{ height: 3, backgroundColor: '#10B981' }} />
             <View className="px-4 pt-4 pb-1">
@@ -123,7 +120,6 @@ export default function WorkerDetailsScreen() {
             </View>
           </View>
 
-          {/* ── Professional / Work ── */}
           {(worker.trade || worker.daily_wage || worker.id_number) && (
             <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
               <View style={{ height: 3, backgroundColor: '#3B82F6' }} />
@@ -143,7 +139,6 @@ export default function WorkerDetailsScreen() {
             </View>
           )}
 
-          {/* ── Rating ── */}
           {worker.rating && (
             <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
               <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
@@ -166,7 +161,6 @@ export default function WorkerDetailsScreen() {
             </View>
           )}
 
-          {/* ── Notes ── */}
           {worker.notes && (
             <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
               <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
@@ -177,7 +171,6 @@ export default function WorkerDetailsScreen() {
             </View>
           )}
 
-          {/* ── Record ── */}
           <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
             <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
             <View className="px-4 pt-4 pb-1">
@@ -186,12 +179,11 @@ export default function WorkerDetailsScreen() {
             </View>
           </View>
 
-          {/* ── Actions ── */}
           <View className="flex-row gap-3">
             <TouchableOpacity
               className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
               activeOpacity={0.85}
-              onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
+              onPress={() => router.push(`/worker/${worker.id}/edit`)}
             >
               <Ionicons name="create-outline" size={18} color="white" />
               <Text className="text-white font-bold text-sm">Edit Worker</Text>
@@ -206,9 +198,9 @@ export default function WorkerDetailsScreen() {
               <Text className="font-bold text-sm text-[#EF4444]">Delete</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </ScrollView>
     </>
   );
 }
+

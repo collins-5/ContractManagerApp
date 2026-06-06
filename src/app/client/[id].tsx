@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Client } from '@/types';
-import { getAllClients } from '@/database/database';
+import { getAllClients, deleteClient } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 
 const fmtDt = (ts: number) =>
@@ -39,6 +39,31 @@ export default function ClientDetailsScreen() {
       .catch(() => Alert.alert('Error', 'Failed to load client details'));
   }, [id]);
 
+  const handleDelete = () => {
+    if (!client) return;
+    Alert.alert(
+      'Delete Client',
+      `Are you sure you want to delete ${client.full_name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteClient(id as string);
+              Alert.alert('Success', 'Client deleted successfully', [
+                { text: 'OK', onPress: () => router.replace('/(tabs)/contacts') }
+              ]);
+            } catch {
+              Alert.alert('Error', 'Failed to delete client');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (!client) {
     return (
       <View className="flex-1 justify-center items-center bg-background gap-3">
@@ -70,18 +95,12 @@ export default function ClientDetailsScreen() {
           <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
             Client
           </Text>
-          <Text className="text-foreground text-xl font-black tracking-tight">
-            {client.full_name}
-          </Text>
+          <Text className="text-foreground text-xl font-black tracking-tight">{client.full_name}</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1 py-2 bg-background" showsVerticalScrollIndicator={false}>
-
-
         <View className="px-5 pb-10">
-
-          {/* ── Contact Info ── */}
           <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
             <View style={{ height: 3, backgroundColor: '#7C5CFC' }} />
             <View className="px-4 pt-4 pb-1">
@@ -94,7 +113,6 @@ export default function ClientDetailsScreen() {
             </View>
           </View>
 
-          {/* ── Notes ── */}
           {client.notes && (
             <View className="bg-card rounded-2xl border border-border overflow-hidden mb-4">
               <View style={{ height: 3, backgroundColor: '#F59E0B' }} />
@@ -107,7 +125,6 @@ export default function ClientDetailsScreen() {
             </View>
           )}
 
-          {/* ── Meta ── */}
           <View className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
             <View style={{ height: 3, backgroundColor: '#5C5A72' }} />
             <View className="px-4 pt-4 pb-1">
@@ -118,12 +135,11 @@ export default function ClientDetailsScreen() {
             </View>
           </View>
 
-          {/* ── Actions ── */}
           <View className="flex-row gap-3">
             <TouchableOpacity
               className="flex-1 bg-primary rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
               activeOpacity={0.85}
-              onPress={() => Alert.alert('Coming Soon', 'Edit functionality will be added')}
+              onPress={() => router.push(`/client/${client.id}/edit`)}
             >
               <Ionicons name="create-outline" size={18} color="white" />
               <Text className="text-white font-bold text-sm">Edit Client</Text>
@@ -132,15 +148,15 @@ export default function ClientDetailsScreen() {
             <TouchableOpacity
               className="flex-1 bg-card border border-[#EF4444] rounded-2xl py-3.5 flex-row justify-center items-center gap-2"
               activeOpacity={0.85}
-              onPress={() => Alert.alert('Coming Soon', 'Delete functionality will be added')}
+              onPress={handleDelete}
             >
               <Ionicons name="trash-outline" size={18} color="#EF4444" />
               <Text className="font-bold text-sm text-[#EF4444]">Delete</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </ScrollView>
     </>
   );
 }
+

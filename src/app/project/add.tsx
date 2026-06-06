@@ -1,10 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
+
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import uuid from 'react-native-uuid';
-import { insertProject, getAllClients } from '@/database/database';
+import { insertProject, getAllClients, insertClient } from '@/database/database';
 import { Client } from '@/types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -91,13 +92,60 @@ export default function AddProjectScreen() {
   const [priority,    setPriority]    = useState('medium');
   const [clients,     setClients]     = useState<Client[]>([]);
 
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [newClientFullName, setNewClientFullName] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientAddress, setNewClientAddress] = useState('');
+  const [newClientNotes, setNewClientNotes] = useState('');
+
+
   useEffect(() => {
     getAllClients().then(setClients);
   }, []);
 
+  const refreshClients = async () => {
+    const list = await getAllClients();
+    setClients(list);
+    return list;
+  };
+
+  const handleAddClient = async () => {
+    const fullName = newClientFullName.trim();
+    const phoneNumber = newClientPhone.trim();
+    if (!fullName) return Alert.alert('Error', 'Client name is required');
+    if (!phoneNumber) return Alert.alert('Error', 'Client phone number is required');
+
+    try {
+      await insertClient({
+        id: uuid.v4() as string,
+        full_name: fullName,
+        phone_number: phoneNumber,
+        email: newClientEmail.trim() ? newClientEmail.trim() : null,
+        address: newClientAddress.trim() ? newClientAddress.trim() : null,
+        notes: newClientNotes.trim() ? newClientNotes.trim() : null,
+      } as any);
+
+      const list = await refreshClients();
+      const created = list.find(c => c.full_name === fullName && c.phone_number === phoneNumber) ?? null;
+      setClientId(created?.id ?? '');
+
+      setShowAddClient(false);
+      setNewClientFullName('');
+      setNewClientPhone('');
+      setNewClientEmail('');
+      setNewClientAddress('');
+      setNewClientNotes('');
+
+      Alert.alert('Success', 'Client created successfully');
+    } catch {
+      Alert.alert('Error', 'Failed to create client');
+    }
+  };
+
   const handleSave = async () => {
-    if (!projectName.trim())          return Alert.alert('Error', 'Please enter a project name');
-    if (!clientId)                    return Alert.alert('Error', 'Please select a client');
+    if (!projectName.trim()) return Alert.alert('Error', 'Please enter a project name');
+    if (!clientId) return Alert.alert('Error', 'Please select a client');
     if (!budget || parseFloat(budget) <= 0) return Alert.alert('Error', 'Please enter a valid budget');
 
     try {
@@ -126,6 +174,88 @@ export default function AddProjectScreen() {
 
   return (
     <>
+      <Modal
+        visible={showAddClient}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAddClient(false)}
+      >
+        <View className="flex-1 bg-black/40 justify-center p-5">
+          <View className="bg-white rounded-2xl border border-border overflow-hidden">
+            <View className="flex-row items-center justify-between px-4 py-3 bg-primary/10 border-b border-border">
+              <Text className="text-foreground font-black text-base">Add Client</Text>
+              <TouchableOpacity onPress={() => setShowAddClient(false)} className="px-2 py-1">
+                <Ionicons name="close" size={20} color="#5C5A72" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+              <FieldLabel label="Full Name" required />
+              <StyledInput
+                placeholder="e.g. John Kamau"
+                value={newClientFullName}
+                onChangeText={setNewClientFullName}
+              />
+
+              <FieldLabel label="Phone Number" required />
+              <StyledInput
+                placeholder="e.g. 0712 345 678"
+                keyboardType="phone-pad"
+                value={newClientPhone}
+                onChangeText={setNewClientPhone}
+              />
+
+              <FieldLabel label="Email" />
+              <StyledInput
+                placeholder="client@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={newClientEmail}
+                onChangeText={setNewClientEmail}
+              />
+
+              <FieldLabel label="Address" />
+              <StyledInput
+                placeholder="e.g. Westlands, Nairobi"
+                value={newClientAddress}
+                onChangeText={setNewClientAddress}
+              />
+
+              <FieldLabel label="Notes" />
+              <StyledInput
+                placeholder="Any additional notes…"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                value={newClientNotes}
+                onChangeText={setNewClientNotes}
+                style={{ minHeight: 96 }}
+              />
+
+              <View className="flex-row gap-3 mt-2">
+                <TouchableOpacity
+                  className="flex-1 bg-card border border-border rounded-xl py-4 flex-row justify-center items-center gap-2"
+                  activeOpacity={0.85}
+                  onPress={() => setShowAddClient(false)}
+                >
+                  <Ionicons name="close-outline" size={18} color="#5C5A72" />
+                  <Text className="text-foreground font-bold">Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="flex-1 bg-primary rounded-xl py-4 flex-row justify-center items-center gap-2"
+                  activeOpacity={0.85}
+                  onPress={handleAddClient}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={18} color="white" />
+                  <Text className="text-white font-bold">Save</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <View className="flex-row justify-between bg-primary/10 border-b border-primary/30 rounded-b-3xl pt-12 pb-4 px-5">
         <TouchableOpacity
           className="flex-row items-center gap-1.5 mb-4 self-start"
@@ -164,6 +294,7 @@ export default function AddProjectScreen() {
 
               <FieldLabel label="Client" required />
               <View className="bg-gray-50 border border-gray-200 rounded-xl mb-5 overflow-hidden">
+              <View className="mb-5">
                 <Picker
                   selectedValue={clientId}
                   onValueChange={setClientId}
@@ -175,6 +306,16 @@ export default function AddProjectScreen() {
                     <Picker.Item key={c.id} label={c.full_name} value={c.id} color="#1E293B" />
                   ))}
                 </Picker>
+
+                <TouchableOpacity
+                  className="mt-3 bg-card border border-border rounded-xl py-3.5 px-4 flex-row items-center justify-center gap-2"
+                  activeOpacity={0.85}
+                  onPress={() => setShowAddClient(true)}
+                >
+                  <Ionicons name="person-add-outline" size={18} color="#7C5CFC" />
+                  <Text className="text-[#7C5CFC] font-bold">+ Add Client</Text>
+                </TouchableOpacity>
+              </View>
               </View>
 
               <FieldLabel label="Budget (KSh)" required />
