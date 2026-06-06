@@ -160,7 +160,10 @@ export default function ReportsScreen() {
   return (
     <>
      {/* ── Header ── */}
-      <View className="px-5 bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl pt-14 pb-5">
+      <View
+        className="px-5 bg-primary/20 border border-primary/30 pt-14 pb-5"
+        style={{ borderRadius: 24, borderTopLeftRadius: 30, borderTopRightRadius: 30, borderBottomLeftRadius: 18, borderBottomRightRadius: 18 }}
+      >
         <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
           Analytics
         </Text>

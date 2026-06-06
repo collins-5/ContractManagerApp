@@ -255,7 +255,6 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2A4B7C" />}
       >
-        {/* Standard Dashboard Header */}
         <View className="bg-primary/20 border-b border-l border-r border-primary/30 rounded-b-[30px] px-5 pt-14 pb-7">
           <View className="flex-row justify-between items-start">
             <View className="flex-1 pr-4">

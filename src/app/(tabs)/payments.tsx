@@ -140,7 +140,10 @@ export default function PaymentsScreen() {
     <View className="flex-1 bg-background">
 
       {/* ── Header ── */}
-      <View className="flex-row bg-primary/20 border-b border-l border-r border-primary/30 rounded-r-3xl rounded-l-3xl justify-between items-end px-5 pt-14 pb-5">
+      <View
+        className="flex-row bg-primary/20 border border-primary/30 justify-between items-end px-5 pt-14 pb-5"
+        style={{ borderRadius: 24, borderTopLeftRadius: 30, borderTopRightRadius: 30, borderBottomLeftRadius: 18, borderBottomRightRadius: 18 }}
+      >
         <View>
           <Text className="text-primary text-[11px] font-semibold tracking-[3px] uppercase mb-0.5">
             Ledger

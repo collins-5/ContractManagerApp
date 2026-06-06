@@ -5,8 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ClientLayout() {
   return (
     <>
-      <StatusBar barStyle={"light-content"} backgroundColor="#2C4A6E" />
-      <SafeAreaView className="flex-1" style={{ backgroundColor: '#F2F2F7' }}>
+      <SafeAreaView className="flex-1">
         <Stack
           screenOptions={{
             animation: 'slide_from_right',
