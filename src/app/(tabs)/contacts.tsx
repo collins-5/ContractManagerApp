@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, FlatList, Animated } from 'react-native';
-import { Link, useFocusEffect } from 'expo-router';
+import { View, Text, TouchableOpacity, FlatList, Animated, Alert } from 'react-native';
+import { Link, useFocusEffect, router } from 'expo-router';
 import { useState, useCallback, useRef } from 'react';
 import { Client, Worker, Engineer } from '@/types';
 import { getAllClients, getAllWorkers, getAllEngineers } from '@/database/database';
@@ -141,8 +141,34 @@ export default function ContactsScreen() {
 
   useFocusEffect(useCallback(() => { loadData(); }, []));
 
-  const ADD_LINKS: Record<Tab, string>  = { all: '/client/add', clients: '/client/add', workers: '/worker/add', engineers: '/engineer/add' };
-  const ADD_LABELS: Record<Tab, string> = { all: 'Add Contact', clients: 'Add Client',  workers: 'Add Worker',  engineers: 'Add Engineer'  };
+  const ADD_LINKS: Record<Tab, string>  = {
+    all: '/client/add',
+    clients: '/client/add',
+    workers: '/worker/add',
+    engineers: '/engineer/add',
+  };
+  const ADD_LABELS: Record<Tab, string> = {
+    all: 'Add Contact',
+    clients: 'Add Client',
+    workers: 'Add Worker',
+    engineers: 'Add Engineer',
+  };
+
+  const handleAddPress = () => {
+    // When user is on `all`, let them pick what to add.
+    if (activeTab === 'all') {
+      // Using Alert here to avoid adding a new UI route/component.
+      Alert.alert('Add contact', 'Select a contact type to add.', [
+        { text: 'Client', onPress: () => router.push('/client/add') },
+        { text: 'Worker', onPress: () => router.push('/worker/add') },
+        { text: 'Engineer', onPress: () => router.push('/engineer/add') },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+      return;
+    }
+
+    router.push(ADD_LINKS[activeTab]);
+  };
 
   const displayData: ContactItem[] =
     activeTab === 'all'       ? allContacts :
@@ -164,15 +190,14 @@ export default function ContactsScreen() {
           </Text>
           <Text className="text-foreground text-3xl font-black tracking-tight">Contacts</Text>
         </View>
-        <Link href={ADD_LINKS[activeTab]} asChild>
-          <TouchableOpacity
+        <TouchableOpacity
             className="flex-row items-center bg-primary rounded-xl px-3.5 py-2.5 gap-1"
             activeOpacity={0.85}
+            onPress={handleAddPress}
           >
             <Ionicons name="add" size={18} color="white" />
             <Text className="text-white text-[13px] font-bold">{ADD_LABELS[activeTab]}</Text>
-          </TouchableOpacity>
-        </Link>
+        </TouchableOpacity>
       </View>
 
       {/* ── Tabs ── */}
